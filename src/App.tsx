@@ -19,7 +19,18 @@ function App() {
                 myVideoRef.current.srcObject = responseStream;
             }
             setStream(responseStream);
-            
+            const peer = new Peer({ stream: responseStream, initiator: true, trickle: false });
+            peer.on("signal", signal => socket.emit("join", signal));
+            peer.on("stream", stream => {
+                console.log("Video streamed");
+                if (opponentVideoRef.current) {
+                    opponentVideoRef.current.srcObject = stream;
+                }
+            });
+            socket.on("connect-video", signal => {
+                console.log("Video connected");
+                peer.signal(signal);
+            });
         }
         requestCamera();
 
@@ -27,10 +38,7 @@ function App() {
     }, []);
 
     useEffect(() => {
-        const peer = new Peer({ stream });
-        peer.on("signal", data => peer.signal(data));
-        connectionRef.current = peer;
-        // peer.addStream(responseStream);
+        
     }, [stream]);
 
     return (
